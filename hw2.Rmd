@@ -1,0 +1,72 @@
+---
+title: "hw2.R"
+author: "JINWEN XU  jxu587@wisc.edu"
+date: "2023-09-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1.**Describe the measure you chose and why you chose it:**
+The Cross-Correlation Function (CCF) is a widely used tool in time series analysis to measure the correlation between two time series. Here's why we employ CCF and why we use \(1 - \text{ccf.result}\) as a distance metric:
+
+1.1. **Identifying Shifts**:
+    - The CCF measures the correlation of two series at different lags. The peak value indicates the best alignment between the series.
+
+1.2. **Formula**:
+    For two time series \( x_t \) and \( y_t \), their cross-correlation at lag \( h \) is defined as:
+    For two time series \( x_t \) and \( y_t \), their cross-correlation at lag \( h \) is defined as:
+    \[
+    r_{xy}(h) = \frac{\sum_{t=1}^{T-h} (x_{t+h} - \bar{x})(y_t - \bar{y})}{\sqrt{\sum_{t=1}^T (x_t - \bar{x})^2 \sum_{t=1}^T (y_t - \bar{y})^2}}
+    \]
+    where \( \bar{x} \) and \( \bar{y} \) are the means of \( x \) and \( y \) respectively.
+
+1.3. **Normalization**:
+    - The values of the CCF lie between -1 and 1. A value of 1 indicates perfect positive correlation, -1 indicates perfect negative correlation, and 0 indicates no correlation.
+
+1.4. **Distance Measure**:
+    - Adopting \(1 - \text{ccf.result}\) serves to convert the correlation value from the CCF into a distance metric. The closer the CCF value is to 1, the smaller the distance, indicating greater similarity between the two series.
+
+In essence, the CCF helps gauge the similarity between two time series, and through an appropriate transformation, this similarity can be quantified.
+
+
+2.**Mention difficulties I had:**
+
+1. **Correctly reading and standardizing data paths is a complex process**.
+2. **Since there is a large amount of data, ensuring that the loop runs without errors is also a challenging task**.
+
+
+3.**read csv and plot**
+```{r}
+data <- read.csv("hw2.csv")
+head(data)
+```
+
+```{r}
+require("FITSio")
+subdata=data[1:3,]
+real=readFrameFromFITS("cB58_Lyman_break.fit")$FLUX
+zscore <- function(x) {
+  return ((x - mean(x)) / sd(x))
+}
+y2_zscored <- zscore(real)
+for(j in 1:3){
+  subsubdata=subdata[j,]
+  file=subsubdata$filename
+  shift=subsubdata$i
+  cat(sep="", "file=", file, "\n")
+  path_to_file = paste(sep="", "data/", file)
+  cat(sep="", "path_to_file=", path_to_file, "\n")
+  noisy = readFrameFromFITS(path_to_file)$flux # don't save the data frames
+  y1_zscored <- zscore(noisy)
+  index1=1:length(noisy)
+  index2=(1:length(real))+shift
+  plot(index1, y1_zscored, type="l", col="blue", lwd=2, ylab="rescaled flux", xlab="shifted wavelength")
+  lines(index2, y2_zscored, col="red", lwd=2)
+  legend("topleft", legend=c(file, "cB58_Lyman_break.fit"), col=c("blue", "red"), lwd=2)
+}
+```
+
+
